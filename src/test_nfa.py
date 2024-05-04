@@ -134,8 +134,8 @@ def test_get_full_transition_table():
         char("b")
     )
 
-    graph = fsm.get_full_transition_table()
-    assert graph == {
+    table = fsm.get_full_transition_table()
+    assert table == {
         1: {'ε': [1, 2, 5]},
         2: {'a': [3], 'ε': [2]},
         3: {'ε': [3, 4]},

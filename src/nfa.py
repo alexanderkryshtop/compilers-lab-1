@@ -88,7 +88,7 @@ class NFA:
     def __repr__(self):
         return f"[in = {self.in_state}] [out = {self.out_state}]"
 
-    def get_full_transition_table(self) -> dict[int, dict[str, int]]:
+    def get_full_transition_table(self) -> dict[int, dict[str, list[int]]]:
         graph = self.build_graph()
 
         for node_id in self._node_mapping:
@@ -101,7 +101,7 @@ class NFA:
 
         return graph
 
-    def build_graph(self) -> dict[int, dict[str, int]]:
+    def build_graph(self) -> dict[int, dict[str, list[int]]]:
         root = self.in_state
         visited: set[State] = set()
         num = 1
