@@ -128,6 +128,23 @@ def test_build_graph():
     }
 
 
+def test_get_full_transition_table():
+    fsm = union(
+        char("a"),
+        char("b")
+    )
+
+    graph = fsm.get_full_transition_table()
+    assert graph == {
+        1: {'ε': [1, 2, 5]},
+        2: {'a': [3], 'ε': [2]},
+        3: {'ε': [3, 4]},
+        4: {'ε': [4]},
+        5: {'b': [6], 'ε': [5]},
+        6: {'ε': [4, 6]}
+    }
+
+
 ###########
 # HELPERS #
 ###########

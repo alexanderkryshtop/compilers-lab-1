@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Optional
 
 from graphviz import Digraph
 from typing_extensions import Self
@@ -9,7 +10,7 @@ EPSILON = "ε"
 class State:
 
     def __init__(self, accepting: bool = False):
-        self.id = None
+        self.id: Optional[int] = None
         self.accepting = accepting
         self.transition_map: dict[str, list[Self]] = defaultdict(list)
 
@@ -79,16 +80,28 @@ class NFA:
         self.in_state = in_state
         self.out_state = out_state
 
+        self._node_mapping: dict[int, State] = {}
+
     def test(self, string: str):
         return self.in_state.test(string)
 
     def __repr__(self):
         return f"[in = {self.in_state}] [out = {self.out_state}]"
 
-    def get_transition_table(self) -> dict[str, set[str]]:
-        pass
+    def get_full_transition_table(self) -> dict[int, dict[str, int]]:
+        graph = self.build_graph()
 
-    def build_graph(self):
+        for node_id in self._node_mapping:
+            node = self._node_mapping[node_id]
+            closure = node.get_epsilon_closure()
+            closure_ids = []
+            for c in closure:
+                closure_ids.append(c.id)
+            graph[node_id][EPSILON] = sorted(closure_ids)
+
+        return graph
+
+    def build_graph(self) -> dict[int, dict[str, int]]:
         root = self.in_state
         visited: set[State] = set()
         num = 1
@@ -114,6 +127,7 @@ class NFA:
                 for v in vertices:
                     vertices_ids.append(v.id)
                 graph[node.id][symbol] = vertices_ids
+            self._node_mapping[node.id] = node
 
         return graph
 
