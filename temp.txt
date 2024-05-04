@@ -1,0 +1,25 @@
+class Alphabet:
+    def __init__(
+            self,
+            epsilon: str = "E",
+            union: str = "|",
+            concat: str = "+",
+            kleene_star: str = "*",
+            opening_bracket: str = "(",
+            closing_bracket: str = ")",
+    ):
+        self.letters = [chr(c) for c in range(ord("a"), ord("z") + 1)]
+        self.epsilon = epsilon
+        self.union = union
+        self.concat = concat
+        self.kleene_star = kleene_star
+        self.opening_bracket = opening_bracket
+        self.closing_bracket = closing_bracket
+
+
+class RegexStateMachine:
+    def __init__(self, alphabet: Alphabet):
+        self.alphabet = alphabet
+
+    def prepare_expression(self, expression: str) -> str:
+        pass
