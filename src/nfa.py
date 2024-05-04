@@ -124,7 +124,7 @@ class NFA:
         graph = self.build_graph()
 
         for state in graph:
-            if not graph[state]:
+            if not graph[state] or self.out_state.id == state:
                 dot.node(str(state), str(state), shape='doublecircle')
             else:
                 dot.node(str(state), str(state), shape='circle')
@@ -201,6 +201,7 @@ def rep(fragment: NFA) -> NFA:
     fragment.out_state.accepting = False
 
     in_state.add_transition_for_symbol(EPSILON, out_state)
+    in_state.add_transition_for_symbol(EPSILON, fragment.in_state)
     out_state.add_transition_for_symbol(EPSILON, fragment.in_state)
 
     fragment.out_state.add_transition_for_symbol(EPSILON, out_state)
