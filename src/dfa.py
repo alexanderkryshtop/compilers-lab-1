@@ -1,4 +1,7 @@
 from collections import defaultdict, deque
+from typing import Optional
+
+from typing_extensions import Self
 
 from nfa import NFA
 from nfa import nfa_to_dfa
@@ -10,15 +13,24 @@ RawAcceptingStates = set[tuple[int, ...]]
 
 class DFA:
 
-    def __init__(self, nfa: NFA):
-        if nfa:
-            raw_dfa_table, raw_dfa_accepts = nfa_to_dfa(nfa)
-            self.table, self.accepts = relabel_dfa_states(raw_dfa_table, raw_dfa_accepts)
-        self.initial_state = 0
+    def __init__(
+        self,
+        table: Optional[dict[int, dict[str, int]]] = None,
+        accepts: Optional[set[int]] = None,
+        initial_state: int = 0,
+    ):
+        self.table = table
+        self.accepts = accepts
+        self.initial_state = initial_state
 
-        self.min_table = None
-        self.min_accepts = None
-        self.min_initial_state = None
+    @classmethod
+    def from_nfa(cls, nfa: NFA) -> Self:
+        dfa = DFA()
+        raw_dfa_table, raw_dfa_accepts = nfa_to_dfa(nfa)
+
+        dfa.table, dfa.accepts = relabel_dfa_states(raw_dfa_table, raw_dfa_accepts)
+        dfa.initial_state = 0
+        return dfa
 
     def test(self, string: str) -> bool:
         current_state = 0
@@ -72,7 +84,7 @@ class DFA:
 
         return marked
 
-    def minimize(self):
+    def build_min_dfa(self) -> Self:
         n = len(self.table)
         states = list(self.table.keys())
         is_terminal = [self._is_terminal(state) for state in states]
@@ -98,9 +110,9 @@ class DFA:
                     if not marked[i][j]:
                         component[j] = components_count
 
-        self.build_minimization(component)
+        return self._build_minimization(component)
 
-    def build_minimization(self, component):
+    def _build_minimization(self, component) -> Self:
         new_state_dict = {}
         for from_state, value_dict in self.table.items():
             new_from_state = component[from_state]
@@ -108,9 +120,12 @@ class DFA:
                 new_to_state = component[to_state]
                 new_state_dict.setdefault(new_from_state, {})[sign] = new_to_state
 
-        self.min_table = new_state_dict
-        self.min_initial_state = component[self.initial_state]
-        self.min_accepts = {component[state] for state in self.accepts}
+        min_table = new_state_dict
+        min_initial_state = component[self.initial_state]
+        min_accepts = {component[state] for state in self.accepts}
+
+        minimized_dfa = DFA(table=min_table, accepts=min_accepts, initial_state=min_initial_state)
+        return minimized_dfa
 
 
 def relabel_dfa_states(

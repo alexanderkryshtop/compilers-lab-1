@@ -8,7 +8,6 @@ from nfa import plus
 from nfa import opt
 from nfa import union
 from nfa import char
-from nfa import nfa_to_dfa
 
 from dfa import DFA
 
@@ -66,28 +65,28 @@ class TestInitDFA:
 
     def test_init_concat(self):
         nfa = concat(char("a"), char("b"))
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         assert dfa.table == {0: {'a': 1}, 1: {'b': 2}, 2: {}}
         assert dfa.accepts == {2}
 
     def test_init_rep(self):
         nfa = rep(char("a"))
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         assert dfa.table == {0: {'a': 1}, 1: {'a': 1}}
         assert dfa.accepts == {0, 1}
 
     def test_init_plus(self):
         nfa = plus(char("a"))
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         assert dfa.table == {0: {'a': 1}, 1: {'a': 1}}
         assert dfa.accepts == {1}
 
     def test_init_opt(self):
         nfa = opt(char("a"))
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         assert dfa.table == {0: {'a': 1}, 1: {}}
         assert dfa.accepts == {0, 1}
@@ -98,7 +97,7 @@ class TestInitDFA:
             char("a"),
             char("b"),
         )
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         assert dfa.table == {
             0: {'a': 2, 'b': 1},
@@ -111,7 +110,7 @@ class TestInitDFA:
 class TestAccept:
     def test_concat_dfa(self):
         nfa = concat(char("a"), char("b"))
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         assert not dfa.test("a")
         assert not dfa.test("b")
@@ -125,7 +124,7 @@ class TestAccept:
 
     def test_rep_dfa(self):
         nfa = rep(char("a"))
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         assert not dfa.test("ab")
         assert not dfa.test("b")
@@ -138,7 +137,7 @@ class TestAccept:
 
     def test_plus_dfa(self):
         nfa = plus(char("a"))
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         assert not dfa.test("")
         assert not dfa.test("b")
@@ -152,7 +151,7 @@ class TestAccept:
 
     def test_opt_dfa(self):
         nfa = opt(char("a"))
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         assert not dfa.test("aa")
         assert not dfa.test("aaa")
@@ -166,7 +165,7 @@ class TestAccept:
 
     def test_union_dfa(self):
         nfa = union(char("a"), char("b"))
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         assert not dfa.test("")
         assert not dfa.test("ab")
@@ -179,7 +178,7 @@ class TestAccept:
 
     def test_char(self):
         nfa = char("a")
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         assert not dfa.test("")
         assert not dfa.test("b")
@@ -213,7 +212,7 @@ class TestDFAReverseTransitions:
 
     def test_rep(self):
         nfa = rep(char("a"))
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         reverse_transitions = dfa._build_reverse_transitions()
         assert reverse_transitions == {1: {"a": {0, 1}}}
@@ -227,10 +226,9 @@ class TestReachable:
             2: {'a': 1, 'b': 0},
             3: {},  # unreachable state
         }
+        initial_accepts = {1}
 
-        dfa = DFA(None)
-        dfa.table = initial_table
-        dfa.accepts = {1}
+        dfa = DFA(initial_table, initial_accepts, initial_state=0)
 
         res = dfa._reachable()
         assert res == [True, True, True, False]
@@ -239,16 +237,16 @@ class TestReachable:
 class TestDFAMinimization:
     def test_simple(self):
         nfa = rep(char("a"))
-        dfa = DFA(nfa)
+        dfa = DFA.from_nfa(nfa)
 
         assert dfa.table == {0: {'a': 1}, 1: {'a': 1}}
         assert dfa.accepts == {0, 1}
 
-        dfa.minimize()
+        min_dfa = dfa.build_min_dfa()
 
-        assert dfa.min_table == {0: {'a': 0}}
-        assert dfa.min_accepts == {0}
-        assert dfa.min_initial_state == 0
+        assert min_dfa.table == {0: {'a': 0}}
+        assert min_dfa.accepts == {0}
+        assert min_dfa.initial_state == 0
 
     def test_complex_example(self):
         initial_table = {
@@ -261,19 +259,30 @@ class TestDFAMinimization:
             6: {"a": 5, "b": 4},
             7: {"a": 7, "b": 4},
         }
+        initial_accepts = {4, 7}
 
-        dfa = DFA(None)
-        dfa.table = initial_table
-        dfa.accepts = {4, 7}
+        dfa = DFA(initial_table, initial_accepts, initial_state=0)
 
-        dfa.minimize()
+        min_dfa = dfa.build_min_dfa()
 
-        assert dfa.min_table == {
+        assert min_dfa.table == {
             0: {'a': 1, 'b': 0},
             1: {'a': 2, 'b': 2},
             2: {'a': 4, 'b': 3},
             3: {'a': 3, 'b': 3},
             4: {'a': 3, 'b': 3}
         }
-        assert dfa.min_accepts == {3}
-        assert dfa.min_initial_state == 0
+        assert min_dfa.accepts == {3}
+        assert min_dfa.initial_state == 0
+
+
+###########
+# HELPERS #
+###########
+
+
+def _build_dfa(table, accepts):
+    dfa = DFA(None)
+    dfa.table = table
+    dfa.accepts = accepts
+    return dfa
