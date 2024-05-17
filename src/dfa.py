@@ -2,6 +2,7 @@ from collections import defaultdict, deque
 
 from nfa import NFA
 from nfa import nfa_to_dfa
+from src.converter import ALPHABET
 
 RawDFATable = dict[tuple[int, ...], dict[str, tuple[int, ...]]]
 RawAcceptingStates = set[tuple[int, ...]]
@@ -17,6 +18,7 @@ class DFA:
 
         self.min_table = None
         self.min_accepts = None
+        self.min_initial_state = None
 
     def test(self, string: str) -> bool:
         current_state = 0
@@ -54,14 +56,14 @@ class DFA:
         queue = deque()
 
         for i in range(n):
-            for j in range(i + 1, n):
-                if is_terminal[i] != is_terminal[j]:
+            for j in range(n):
+                if not marked[i][j] and is_terminal[i] != is_terminal[j]:
                     marked[i][j] = marked[j][i] = True
                     queue.append((i, j))
 
         while queue:
             u, v = queue.popleft()
-            for symbol in reverse_transitions[u]:
+            for symbol in ALPHABET:
                 for r in reverse_transitions[u][symbol]:
                     for s in reverse_transitions[v][symbol]:
                         if not marked[r][s]:
@@ -80,7 +82,10 @@ class DFA:
         marked = self._build_table(n, is_terminal, reverse_transitions)
 
         component = [-1] * n
-        component[0] = 0
+        for i in range(n):
+            if not marked[0][i]:
+                component[i] = 0
+
         components_count = 0
 
         for i in range(1, n):
@@ -89,26 +94,23 @@ class DFA:
             if component[i] == -1:
                 components_count += 1
                 component[i] = components_count
-                for j in range(i + 1, n):
+                for j in range(i+1, n):
                     if not marked[i][j]:
                         component[j] = components_count
 
-        minimized_table = {}
-        minimized_accepts = set()
+        self.build_minimization(component)
 
-        for state, transitions in self.table.items():
-            i = states.index(state)
-            representative = component[i]
-            if representative not in minimized_table:
-                minimized_table[representative] = {}
-            if state in self.accepts:
-                minimized_accepts.add(representative)
-            for symbol, next_state in transitions.items():
-                ni = states.index(next_state)
-                minimized_table[representative][symbol] = component[ni]
+    def build_minimization(self, component):
+        new_state_dict = {}
+        for from_state, value_dict in self.table.items():
+            new_from_state = component[from_state]
+            for sign, to_state in value_dict.items():
+                new_to_state = component[to_state]
+                new_state_dict.setdefault(new_from_state, {})[sign] = new_to_state
 
-        self.min_table = minimized_table
-        self.min_accepts = minimized_accepts
+        self.min_table = new_state_dict
+        self.min_initial_state = component[self.initial_state]
+        self.min_accepts = {component[state] for state in self.accepts}
 
 
 def relabel_dfa_states(

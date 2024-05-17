@@ -190,33 +190,90 @@ class TestAccept:
         assert dfa.test("a")
 
 
-class TestDFAMinimization:
-    def test_simple(self):
+class TestDFAReverseTransitions:
+    def test(self):
         initial_table = {
-            0: {'a': 1, 'b': 3},
-            1: {'a': 2, 'b': 4},
-            2: {'a': 1, 'b': 5},
-            3: {'a': 4, 'b': 0},
-            4: {'a': 5, 'b': 1},
-            5: {'a': 4, 'b': 2}
+            0: {'a': 1, 'b': 2},
+            1: {'a': 0, 'b': 2},
+            2: {'a': 1, 'b': 0}
         }
-        initial_accepts = {1, 4}
 
         dfa = DFA(None)
         dfa.table = initial_table
-        dfa.accepts = initial_accepts
+        dfa.accepts = {1}
 
-        expected_table = {
-            0: {'a': 1, 'b': 2},
-            1: {'a': 1, 'b': 1},
-            2: {'a': 1, 'b': 0},
+        expected_reverse_transitions = {
+            0: {'a': {1}, 'b': {2}},
+            1: {'a': {0, 2}},
+            2: {'b': {0, 1}}
         }
-        expected_accepts = {1}
+
+        reverse_transitions = dfa._build_reverse_transitions()
+        assert reverse_transitions == expected_reverse_transitions
+
+    def test_rep(self):
+        nfa = rep(char("a"))
+        dfa = DFA(nfa)
+
+        reverse_transitions = dfa._build_reverse_transitions()
+        assert reverse_transitions == {1: {"a": {0, 1}}}
+
+
+class TestReachable:
+    def test_simple(self):
+        initial_table = {
+            0: {'a': 1, 'b': 2},
+            1: {'a': 0, 'b': 2},
+            2: {'a': 1, 'b': 0},
+            3: {},  # unreachable state
+        }
+
+        dfa = DFA(None)
+        dfa.table = initial_table
+        dfa.accepts = {1}
+
+        res = dfa._reachable()
+        assert res == [True, True, True, False]
+
+
+class TestDFAMinimization:
+    def test_simple(self):
+        nfa = rep(char("a"))
+        dfa = DFA(nfa)
+
+        assert dfa.table == {0: {'a': 1}, 1: {'a': 1}}
+        assert dfa.accepts == {0, 1}
+
+        dfa.minimize()
+
+        assert dfa.min_table == {0: {'a': 0}}
+        assert dfa.min_accepts == {0}
+        assert dfa.min_initial_state == 0
+
+    def test_complex_example(self):
+        initial_table = {
+            0: {"a": 1, "b": 2},
+            1: {"a": 3, "b": 3},
+            2: {"a": 1, "b": 0},
+            3: {"a": 5, "b": 4},
+            4: {"a": 4, "b": 4},
+            5: {"a": 4, "b": 7},
+            6: {"a": 5, "b": 4},
+            7: {"a": 7, "b": 4},
+        }
+
+        dfa = DFA(None)
+        dfa.table = initial_table
+        dfa.accepts = {4, 7}
+
         dfa.minimize()
 
         assert dfa.min_table == {
-            0: {'a': 1, 'b': 2},
-            1: {'a': 2, 'b': 1},
-            2: {'a': 1, 'b': 2}
+            0: {'a': 1, 'b': 0},
+            1: {'a': 2, 'b': 2},
+            2: {'a': 4, 'b': 3},
+            3: {'a': 3, 'b': 3},
+            4: {'a': 3, 'b': 3}
         }
-        assert dfa.min_accepts == {1}
+        assert dfa.min_accepts == {3}
+        assert dfa.min_initial_state == 0
