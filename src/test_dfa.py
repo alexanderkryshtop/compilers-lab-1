@@ -188,3 +188,35 @@ class TestAccept:
         assert not dfa.test("ba")
 
         assert dfa.test("a")
+
+
+class TestDFAMinimization:
+    def test_simple(self):
+        initial_table = {
+            0: {'a': 1, 'b': 3},
+            1: {'a': 2, 'b': 4},
+            2: {'a': 1, 'b': 5},
+            3: {'a': 4, 'b': 0},
+            4: {'a': 5, 'b': 1},
+            5: {'a': 4, 'b': 2}
+        }
+        initial_accepts = {1, 4}
+
+        dfa = DFA(None)
+        dfa.table = initial_table
+        dfa.accepts = initial_accepts
+
+        expected_table = {
+            0: {'a': 1, 'b': 2},
+            1: {'a': 1, 'b': 1},
+            2: {'a': 1, 'b': 0},
+        }
+        expected_accepts = {1}
+        dfa.minimize()
+
+        assert dfa.min_table == {
+            0: {'a': 1, 'b': 2},
+            1: {'a': 2, 'b': 1},
+            2: {'a': 1, 'b': 2}
+        }
+        assert dfa.min_accepts == {1}

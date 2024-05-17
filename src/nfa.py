@@ -9,6 +9,7 @@ EPSILON = "ε"
 RawDFATable = dict[tuple[int, ...], dict[str, tuple[int, ...]]]
 RawAcceptingStates = set[tuple[int, ...]]
 
+
 class State:
 
     def __init__(self, accepting: bool = False):
