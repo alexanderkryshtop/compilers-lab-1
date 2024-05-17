@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 from typing import Optional
 
 from graphviz import Digraph
@@ -228,3 +228,66 @@ def plus(fragment: NFA) -> NFA:
 
 def opt(fragment: NFA) -> NFA:
     return union(fragment, char(EPSILON))
+
+
+# Множество состояний, достижимых из состояния q только по ε-переходам
+def epsilon_closure_of_state(state_id: int, transition_table: dict[int, dict[str, list[int]]]) -> set[int]:
+    stack = [state_id]
+    closure = set(stack)
+
+    while stack:
+        state = stack.pop()
+        if EPSILON in transition_table[state]:
+            for next_state in transition_table[state][EPSILON]:
+                if next_state not in closure:
+                    closure.add(next_state)
+                    stack.append(next_state)
+    return closure
+
+
+def epsilon_closure_of_set(state_ids: set[int], transition_table: dict[int, dict[str, list[int]]]) -> set[int]:
+    closure = set()
+    for state_id in state_ids:
+        closure.update(epsilon_closure_of_state(state_id, transition_table))
+    return closure
+
+
+def move(state_ids: set[int], symbol: str, transition_table: dict[int, dict[str, list[int]]]) -> set[int]:
+    next_states = set()
+    for state_id in state_ids:
+        if symbol in transition_table[state_id]:
+            next_states.update(transition_table[state_id][symbol])
+    return next_states
+
+
+def nfa_to_dfa(nfa: NFA) -> dict[tuple[int, ...], dict[str, tuple[int, ...]]]:
+    transition_table = nfa.get_full_transition_table()
+
+    initial_closure = epsilon_closure_of_set({nfa.in_state.id}, transition_table)
+    dfa_transition_table = {}
+    dfa_states = {tuple(sorted(initial_closure)): 0}
+    queue = deque([initial_closure])
+
+    alphabet = {symbol for state_transitions in transition_table.values() for symbol in state_transitions if
+                symbol != EPSILON}
+    state_id_counter = 1
+
+    while queue:
+        current = queue.popleft()
+        current_tuple = tuple(sorted(current))
+        if current_tuple not in dfa_transition_table:
+            dfa_transition_table[current_tuple] = {}
+
+        for symbol in alphabet:
+            next_states = move(current, symbol, transition_table)
+            next_closure = epsilon_closure_of_set(next_states, transition_table)
+            next_tuple = tuple(sorted(next_closure))
+
+            if next_tuple not in dfa_states:
+                dfa_states[next_tuple] = state_id_counter
+                state_id_counter += 1
+                queue.append(next_closure)
+
+            dfa_transition_table[current_tuple][symbol] = next_tuple
+
+    return dfa_transition_table

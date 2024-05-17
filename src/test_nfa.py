@@ -7,6 +7,9 @@ from nfa import rep
 from nfa import union
 from nfa import State
 from nfa import EPSILON
+from nfa import epsilon_closure_of_state
+from nfa import epsilon_closure_of_set
+from nfa import move
 
 
 def test_concat():
@@ -143,6 +146,178 @@ def test_get_full_transition_table():
         5: {'b': [6], 'ε': [5]},
         6: {'ε': [4, 6]}
     }
+
+
+class TestEpsilonClosureOfState:
+    def test_no_epsilon_transitions(self):
+        transition_table = {
+            1: {'a': [2]},
+            2: {'b': [3]}
+        }
+        assert epsilon_closure_of_state(1, transition_table) == {1}
+
+    def test_single_epsilon_transition(self):
+        transition_table = {
+            1: {EPSILON: [2]},
+            2: {'b': [3]},
+            3: {}
+        }
+        assert epsilon_closure_of_state(1, transition_table) == {1, 2}
+
+    def test_multiple_epsilon_transitions(self):
+        transition_table = {
+            1: {EPSILON: [2, 3]},
+            2: {EPSILON: [4]},
+            3: {'b': [5]},
+            4: {},
+            5: {}
+        }
+        assert epsilon_closure_of_state(1, transition_table) == {1, 2, 3, 4}
+
+    def test_cyclic_epsilon_transitions(self):
+        transition_table = {
+            1: {EPSILON: [2]},
+            2: {EPSILON: [3]},
+            3: {EPSILON: [1, 4]},
+            4: {}
+        }
+        assert epsilon_closure_of_state(1, transition_table) == {1, 2, 3, 4}
+
+    def test_complex_epsilon_transitions(self):
+        transition_table = {
+            1: {EPSILON: [2, 3]},
+            2: {'a': [4]},
+            3: {EPSILON: [5]},
+            4: {EPSILON: [5, 6]},
+            5: {EPSILON: [7]},
+            6: {},
+            7: {EPSILON: [8]},
+            8: {}
+        }
+        assert epsilon_closure_of_state(1, transition_table) == {1, 2, 3, 5, 7, 8}
+
+
+class TestEpsilonClosureOfSet:
+    def test_no_epsilon_transitions_for_set(self):
+        transition_table = {
+            1: {'a': [2]},
+            2: {'b': [3]},
+            3: {}
+        }
+        assert epsilon_closure_of_set({1, 2}, transition_table) == {1, 2}
+
+    def test_single_epsilon_transition_for_set(self):
+        transition_table = {
+            1: {EPSILON: [2]},
+            2: {'b': [3]},
+            3: {}
+        }
+        assert epsilon_closure_of_set({1}, transition_table) == {1, 2}
+
+    def test_multiple_epsilon_transitions_for_set(self):
+        transition_table = {
+            1: {EPSILON: [2, 3]},
+            2: {EPSILON: [4]},
+            3: {'b': [5]},
+            4: {},
+            5: {}
+        }
+        assert epsilon_closure_of_set({1}, transition_table) == {1, 2, 3, 4}
+
+    def test_cyclic_epsilon_transitions_for_set(self):
+        transition_table = {
+            1: {EPSILON: [2]},
+            2: {EPSILON: [3]},
+            3: {EPSILON: [1, 4]},
+            4: {}
+        }
+        assert epsilon_closure_of_set({1}, transition_table) == {1, 2, 3, 4}
+
+    def test_complex_epsilon_transitions_for_set(self):
+        transition_table = {
+            1: {EPSILON: [2, 3]},
+            2: {'a': [4]},
+            3: {EPSILON: [5]},
+            4: {EPSILON: [5, 6]},
+            5: {EPSILON: [7]},
+            6: {},
+            7: {EPSILON: [8]},
+            8: {}
+        }
+        assert epsilon_closure_of_set({1}, transition_table) == {1, 2, 3, 5, 7, 8}
+
+    def test_no_epsilon_transitions_mixed_states(self):
+        transition_table = {
+            1: {'a': [2]},
+            2: {EPSILON: [3]},
+            3: {}
+        }
+        assert epsilon_closure_of_set({1, 2}, transition_table) == {1, 2, 3}
+
+    def test_epsilon_transitions_with_self_loop(self):
+        transition_table = {
+            1: {EPSILON: [1, 2]},
+            2: {EPSILON: [3]},
+            3: {}
+        }
+        assert epsilon_closure_of_set({1}, transition_table) == {1, 2, 3}
+
+
+class TestMove:
+
+    def test_move_no_transitions(self):
+        transition_table = {
+            1: {},
+            2: {'b': [3]},
+            3: {}
+        }
+        assert move({1}, 'a', transition_table) == set()
+
+    def test_move_single_transition(self):
+        transition_table = {
+            1: {'a': [2]},
+            2: {'b': [3]},
+            3: {}
+        }
+        assert move({1}, 'a', transition_table) == {2}
+
+    def test_move_multiple_transitions(self):
+        transition_table = {
+            1: {'a': [2, 3]},
+            2: {'b': [4]},
+            3: {'a': [5]},
+            4: {},
+            5: {}
+        }
+        assert move({1, 3}, 'a', transition_table) == {2, 3, 5}
+
+    def test_move_cyclic_transitions(self):
+        transition_table = {
+            1: {'a': [2]},
+            2: {'b': [3]},
+            3: {'a': [1]}
+        }
+        assert move({1, 3}, 'a', transition_table) == {1, 2}
+
+    def test_move_no_valid_transitions(self):
+        transition_table = {
+            1: {'a': [2]},
+            2: {'b': [3]},
+            3: {}
+        }
+        assert move({1, 2}, 'c', transition_table) == set()
+
+    def test_move_complex_transitions(self):
+        transition_table = {
+            1: {'a': [2], 'b': [3]},
+            2: {'a': [4], 'b': [5]},
+            3: {'a': [6], 'b': [7]},
+            4: {},
+            5: {},
+            6: {},
+            7: {}
+        }
+        assert move({1, 2, 3}, 'b', transition_table) == {3, 5, 7}
 
 
 ###########
