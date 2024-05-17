@@ -283,6 +283,9 @@ def nfa_to_dfa(nfa: NFA) -> dict[tuple[int, ...], dict[str, tuple[int, ...]]]:
             next_closure = epsilon_closure_of_set(next_states, transition_table)
             next_tuple = tuple(sorted(next_closure))
 
+            if not next_tuple:
+                continue
+
             if next_tuple not in dfa_states:
                 dfa_states[next_tuple] = state_id_counter
                 state_id_counter += 1

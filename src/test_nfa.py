@@ -5,11 +5,14 @@ from nfa import concat
 from nfa import opt
 from nfa import rep
 from nfa import union
+from nfa import plus
 from nfa import State
 from nfa import EPSILON
 from nfa import epsilon_closure_of_state
 from nfa import epsilon_closure_of_set
 from nfa import move
+from nfa import NFA
+from nfa import nfa_to_dfa
 
 
 def test_concat():
@@ -319,6 +322,54 @@ class TestMove:
         }
         assert move({1, 2, 3}, 'b', transition_table) == {3, 5, 7}
 
+
+class TestNfaToDfaTable:
+    def test_nfa_to_dfa(self):
+        nfa = concat(
+            char("a"),
+            char("b"),
+        )
+        dfa_table = nfa_to_dfa(nfa)
+
+        expected_dfa = {(1,): {'a': (2, 3)}, (2, 3): {'b': (4,)}, (4,): {}}
+
+        assert dfa_table == expected_dfa
+
+    def test_nfa_to_dfa_simple(self):
+        nfa = char("a")
+        dfa_table = nfa_to_dfa(nfa)
+
+        expected_dfa = {(1,): {'a': (2,)}, (2,): {}}
+
+        assert dfa_table == expected_dfa
+
+    def test_nfa_to_dfa_plus(self):
+        nfa = plus(char("a"))
+        dfa_table = nfa_to_dfa(nfa)
+
+        assert dfa_table == {
+            (1,): {'a': (1, 2, 3, 4)},
+            (1, 2, 3, 4): {'a': (1, 2, 3, 4)}
+        }
+
+    def test_nfa_to_dfa_union(self):
+        nfa = union(char("a"), char("b"))
+        dfa_table = nfa_to_dfa(nfa)
+
+        assert dfa_table == {
+            (1, 2, 5): {'a': (3, 4), 'b': (4, 6)},
+            (3, 4): {},
+            (4, 6): {}
+        }
+
+    def test_nfa_to_dfa_rep(self):
+        nfa = rep(char("a"))
+        dfa_table = nfa_to_dfa(nfa)
+
+        assert dfa_table == {
+            (1, 2, 3): {'a': (2, 3, 4)},
+            (2, 3, 4): {'a': (2, 3, 4)}
+        }
 
 ###########
 # HELPERS #
