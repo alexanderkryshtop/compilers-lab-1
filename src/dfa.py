@@ -1,11 +1,15 @@
+from nfa import NFA
+from nfa import nfa_to_dfa
+
 RawDFATable = dict[tuple[int, ...], dict[str, tuple[int, ...]]]
 RawAcceptingStates = set[tuple[int, ...]]
 
 
 class DFA:
 
-    def __init__(self, raw_dfa_table: RawDFATable):
-        self._table = relabel_dfa_states(raw_dfa_table)
+    def __init__(self, nfa: NFA):
+        raw_dfa_table, raw_dfa_accepts = nfa_to_dfa(nfa)
+        self.table, self.accepts = relabel_dfa_states(raw_dfa_table, raw_dfa_accepts)
 
     def test(self, string: str) -> bool:
         pass
