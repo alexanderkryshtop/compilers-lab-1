@@ -329,7 +329,7 @@ class TestNfaToDfaTable:
             char("a"),
             char("b"),
         )
-        dfa_table = nfa_to_dfa(nfa)
+        dfa_table, accepting_states = nfa_to_dfa(nfa)
 
         expected_dfa = {
             (1,): {'a': (2, 3)},
@@ -338,42 +338,50 @@ class TestNfaToDfaTable:
         }
 
         assert dfa_table == expected_dfa
+        assert accepting_states == {(4,)}
 
     def test_nfa_to_dfa_simple(self):
         nfa = char("a")
-        dfa_table = nfa_to_dfa(nfa)
+        dfa_table, accepting_states = nfa_to_dfa(nfa)
 
-        expected_dfa = {(1,): {'a': (2,)}, (2,): {}}
+        expected_dfa = {
+            (1,): {'a': (2,)},
+            (2,): {}
+        }
 
         assert dfa_table == expected_dfa
+        assert accepting_states == {(2,)}
 
     def test_nfa_to_dfa_plus(self):
         nfa = plus(char("a"))
-        dfa_table = nfa_to_dfa(nfa)
+        dfa_table, accepting_states = nfa_to_dfa(nfa)
 
         assert dfa_table == {
             (1,): {'a': (1, 2, 3, 4)},
             (1, 2, 3, 4): {'a': (1, 2, 3, 4)}
         }
+        assert accepting_states == {(1, 2, 3, 4)}
 
     def test_nfa_to_dfa_union(self):
         nfa = union(char("a"), char("b"))
-        dfa_table = nfa_to_dfa(nfa)
+        dfa_table, accepting_states = nfa_to_dfa(nfa)
 
         assert dfa_table == {
             (1, 2, 5): {'a': (3, 4), 'b': (4, 6)},
             (3, 4): {},
             (4, 6): {}
         }
+        assert accepting_states == {(3, 4), (4, 6)}
 
     def test_nfa_to_dfa_rep(self):
         nfa = rep(char("a"))
-        dfa_table = nfa_to_dfa(nfa)
+        dfa_table, accepting_states = nfa_to_dfa(nfa)
 
         assert dfa_table == {
             (1, 2, 3): {'a': (2, 3, 4)},
             (2, 3, 4): {'a': (2, 3, 4)}
         }
+        assert accepting_states == {(1, 2, 3), (2, 3, 4)}
 
 
 ###########

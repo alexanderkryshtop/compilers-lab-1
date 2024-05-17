@@ -6,6 +6,8 @@ from typing_extensions import Self
 
 EPSILON = "ε"
 
+RawDFATable = dict[tuple[int, ...], dict[str, tuple[int, ...]]]
+RawAcceptingStates = set[tuple[int, ...]]
 
 class State:
 
@@ -260,11 +262,12 @@ def move(state_ids: set[int], symbol: str, transition_table: dict[int, dict[str,
     return next_states
 
 
-def nfa_to_dfa(nfa: NFA) -> dict[tuple[int, ...], dict[str, tuple[int, ...]]]:
+def nfa_to_dfa(nfa: NFA) -> tuple[RawDFATable, RawAcceptingStates]:
     transition_table = nfa.get_full_transition_table()
 
     initial_closure = epsilon_closure_of_set({nfa.in_state.id}, transition_table)
     dfa_transition_table = {}
+    dfa_accepting_states = set()
     dfa_states = {tuple(sorted(initial_closure)): 0}
     queue = deque([initial_closure])
 
@@ -277,6 +280,12 @@ def nfa_to_dfa(nfa: NFA) -> dict[tuple[int, ...], dict[str, tuple[int, ...]]]:
         current_tuple = tuple(sorted(current))
         if current_tuple not in dfa_transition_table:
             dfa_transition_table[current_tuple] = {}
+
+        # if any(state in [s.id for s in nfa.out_states] for state in current):
+        #     dfa_accepts.add(current_tuple)
+
+        if any(c == nfa.out_state.id for c in current_tuple):
+            dfa_accepting_states.add(current_tuple)
 
         for symbol in alphabet:
             next_states = move(current, symbol, transition_table)
@@ -293,4 +302,4 @@ def nfa_to_dfa(nfa: NFA) -> dict[tuple[int, ...], dict[str, tuple[int, ...]]]:
 
             dfa_transition_table[current_tuple][symbol] = next_tuple
 
-    return dfa_transition_table
+    return dfa_transition_table, dfa_accepting_states
