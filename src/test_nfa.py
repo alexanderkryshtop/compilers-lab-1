@@ -331,7 +331,11 @@ class TestNfaToDfaTable:
         )
         dfa_table = nfa_to_dfa(nfa)
 
-        expected_dfa = {(1,): {'a': (2, 3)}, (2, 3): {'b': (4,)}, (4,): {}}
+        expected_dfa = {
+            (1,): {'a': (2, 3)},
+            (2, 3): {'b': (4,)},
+            (4,): {}
+        }
 
         assert dfa_table == expected_dfa
 
@@ -371,9 +375,11 @@ class TestNfaToDfaTable:
             (2, 3, 4): {'a': (2, 3, 4)}
         }
 
+
 ###########
 # HELPERS #
 ###########
+
 
 def _assert_equal(l1: list, l2: list) -> bool:
     return all(x in l2 for x in l1)
