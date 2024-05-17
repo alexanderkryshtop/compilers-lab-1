@@ -104,3 +104,84 @@ class TestInitDFA:
         }
         assert dfa.accepts == {1, 2}
 
+
+class TestAccept:
+    def test_concat_dfa(self):
+        nfa = concat(char("a"), char("b"))
+        dfa = DFA(nfa)
+
+        assert not dfa.test("a")
+        assert not dfa.test("b")
+        assert not dfa.test("")
+        assert not dfa.test("ba")
+        assert not dfa.test("aba")
+        assert not dfa.test("bab")
+        assert not dfa.test("abc")
+
+        assert dfa.test("ab")
+
+    def test_rep_dfa(self):
+        nfa = rep(char("a"))
+        dfa = DFA(nfa)
+
+        assert not dfa.test("ab")
+        assert not dfa.test("b")
+        assert not dfa.test("baaa")
+
+        assert dfa.test("")
+        assert dfa.test("a")
+        assert dfa.test("aa")
+        assert dfa.test("aaa")
+
+    def test_plus_dfa(self):
+        nfa = plus(char("a"))
+        dfa = DFA(nfa)
+
+        assert not dfa.test("")
+        assert not dfa.test("b")
+        assert not dfa.test("ab")
+        assert not dfa.test("ba")
+        assert not dfa.test("aba")
+
+        assert dfa.test("a")
+        assert dfa.test("aa")
+        assert dfa.test("aaa")
+
+    def test_opt_dfa(self):
+        nfa = opt(char("a"))
+        dfa = DFA(nfa)
+
+        assert not dfa.test("aa")
+        assert not dfa.test("aaa")
+        assert not dfa.test("b")
+        assert not dfa.test("ab")
+        assert not dfa.test("ba")
+        assert not dfa.test("aba")
+
+        assert dfa.test("")
+        assert dfa.test("a")
+
+    def test_union_dfa(self):
+        nfa = union(char("a"), char("b"))
+        dfa = DFA(nfa)
+
+        assert not dfa.test("")
+        assert not dfa.test("ab")
+        assert not dfa.test("ba")
+        assert not dfa.test("aba")
+        assert not dfa.test("bab")
+
+        assert dfa.test("a")
+        assert dfa.test("b")
+
+    def test_char(self):
+        nfa = char("a")
+        dfa = DFA(nfa)
+
+        assert not dfa.test("")
+        assert not dfa.test("b")
+        assert not dfa.test("1")
+        assert not dfa.test("aa")
+        assert not dfa.test("ba")
+
+        assert dfa.test("a")

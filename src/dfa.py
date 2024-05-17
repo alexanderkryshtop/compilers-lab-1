@@ -12,8 +12,13 @@ class DFA:
         self.table, self.accepts = relabel_dfa_states(raw_dfa_table, raw_dfa_accepts)
 
     def test(self, string: str) -> bool:
-        pass
-        # logic
+        current_state = 0
+        for symbol in string:
+            if symbol in self.table[current_state]:
+                current_state = self.table[current_state][symbol]
+            else:
+                return False
+        return current_state in self.accepts
 
 
 def relabel_dfa_states(
