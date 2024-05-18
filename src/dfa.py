@@ -124,6 +124,10 @@ class DFA:
         min_initial_state = component[self.initial_state]
         min_accepts = {component[state] for state in self.accepts}
 
+        for accept in min_accepts:
+            if accept not in min_table:
+                min_table[accept] = {}
+
         minimized_dfa = DFA(table=min_table, accepts=min_accepts, initial_state=min_initial_state)
         return minimized_dfa
 

@@ -275,6 +275,71 @@ class TestDFAMinimization:
         assert min_dfa.accepts == {3}
         assert min_dfa.initial_state == 0
 
+    @pytest.mark.skip
+    def test_concat(self):
+        nfa = concat(char("a"), char("b"))
+        dfa = DFA.from_nfa(nfa)
+        min_dfa = dfa.build_min_dfa()
+
+        assert min_dfa.table == {0: {'a': 0, 'b': 1}}
+        assert min_dfa.accepts == {1}
+        assert min_dfa.initial_state == 0
+
+        assert not min_dfa.test("a")
+        assert not min_dfa.test("b")
+        assert not min_dfa.test("")
+
+        assert min_dfa.test("ab")
+
+    def test_plus(self):
+        nfa = plus(char("a"))
+        dfa = DFA.from_nfa(nfa)
+        min_dfa = dfa.build_min_dfa()
+
+        assert min_dfa.table == {0: {'a': 1}, 1: {'a': 1}}
+        assert min_dfa.accepts == {1}
+        assert min_dfa.initial_state == 0
+
+        assert not min_dfa.test("")
+        assert not min_dfa.test("b")
+
+        assert min_dfa.test("a")
+        assert min_dfa.test("aa")
+        assert min_dfa.test("aaa")
+
+    @pytest.mark.skip
+    def test_opt(self):
+        nfa = opt(char("a"))
+        dfa = DFA.from_nfa(nfa)
+        min_dfa = dfa.build_min_dfa()
+
+        assert min_dfa.table == {0: {'a': 0}}
+        assert min_dfa.accepts == {0}
+        assert min_dfa.initial_state == 0
+
+        assert not min_dfa.test("aa")
+        assert not min_dfa.test("ab")
+        assert not min_dfa.test("ba")
+
+        assert min_dfa.test("a")
+        assert min_dfa.test("")
+
+    def test_union(self):
+        nfa = union(char("a"), char("b"))
+        dfa = DFA.from_nfa(nfa)
+        min_dfa = dfa.build_min_dfa()
+
+        assert min_dfa.table == {0: {'a': 1, 'b': 1}, 1: {}}
+        assert min_dfa.accepts == {1}
+        assert min_dfa.initial_state == 0
+
+        assert not min_dfa.test("aa")
+        assert not min_dfa.test("bb")
+        assert not min_dfa.test("")
+
+        assert min_dfa.test("a")
+        assert min_dfa.test("b")
+
 
 ###########
 # HELPERS #
