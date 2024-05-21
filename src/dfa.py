@@ -1,6 +1,7 @@
 from collections import defaultdict, deque
 from typing import Optional
 
+from graphviz import Digraph
 from typing_extensions import Self
 
 from nfa import NFA
@@ -49,6 +50,29 @@ class DFA:
             else:
                 return False
         return current_state in self.accepts
+
+    def draw_graph(self, minimized: bool = False):
+        dot = Digraph()
+        dot.attr(rankdir='LR')
+
+        for state in self.table:
+            if state in self.accepts:
+                dot.node(str(state), str(state), shape='doublecircle')
+            else:
+                dot.node(str(state), str(state), shape='circle')
+
+        dot.node('start', '', shape='none')  # invisible node
+        dot.edge('start', '0', '')
+
+        for state, paths in self.table.items():
+            for symbol, next_state in paths.items():
+                label = str(symbol)
+                dot.edge(str(state), str(next_state), label=label)
+
+        if minimized:
+            dot.render("min_dfa_output", format="png", view=True)
+        else:
+            dot.render("dfa_output", format="png", view=True)
 
     def _build_reverse_transitions(self):
         reverse_transitions = defaultdict(lambda: defaultdict(set))
