@@ -190,7 +190,7 @@ class TestAccept:
 
 
 class TestDFAReverseTransitions:
-    def test(self):
+    def test_simple(self):
         initial_table = {
             0: {'a': 1, 'b': 2},
             1: {'a': 0, 'b': 2},
@@ -204,7 +204,8 @@ class TestDFAReverseTransitions:
         expected_reverse_transitions = {
             0: {'a': {1}, 'b': {2}},
             1: {'a': {0, 2}},
-            2: {'b': {0, 1}}
+            2: {'b': {0, 1}},
+            3: {'a': {3}, 'b': {3}}
         }
 
         reverse_transitions = dfa._build_reverse_transitions()
@@ -215,7 +216,10 @@ class TestDFAReverseTransitions:
         dfa = DFA.from_nfa(nfa)
 
         reverse_transitions = dfa._build_reverse_transitions()
-        assert reverse_transitions == {1: {"a": {0, 1}}}
+        assert reverse_transitions == {
+            1: {"a": {0, 1}},
+            2: {"a": {2}},
+        }
 
 
 class TestReachable:
@@ -231,7 +235,7 @@ class TestReachable:
         dfa = DFA(initial_table, initial_accepts, initial_state=0)
 
         res = dfa._reachable()
-        assert res == [True, True, True, False]
+        assert res == [True, True, True, False, False]  # + 1 aux state
 
 
 class TestDFAMinimization:
@@ -307,14 +311,13 @@ class TestDFAMinimization:
         assert min_dfa.test("aa")
         assert min_dfa.test("aaa")
 
-    @pytest.mark.skip
     def test_opt(self):
         nfa = opt(char("a"))
         dfa = DFA.from_nfa(nfa)
         min_dfa = dfa.build_min_dfa()
 
-        assert min_dfa.table == {0: {'a': 0}}
-        assert min_dfa.accepts == {0}
+        assert min_dfa.table == {0: {'a': 1}, 1: {}}
+        assert min_dfa.accepts == {0, 1}
         assert min_dfa.initial_state == 0
 
         assert not min_dfa.test("aa")
