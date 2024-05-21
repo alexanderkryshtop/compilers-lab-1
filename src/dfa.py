@@ -23,6 +23,15 @@ class DFA:
         self.accepts = accepts
         self.initial_state = initial_state
 
+    @property
+    def terms(self) -> list[str]:
+        terms = []
+        if self.table:
+            for _, v in self.table.items():
+                for k in v:
+                    terms.append(k)
+        return terms
+
     @classmethod
     def from_nfa(cls, nfa: NFA) -> Self:
         dfa = DFA()
@@ -46,13 +55,21 @@ class DFA:
         for state, transitions in self.table.items():
             for symbol, next_state in transitions.items():
                 reverse_transitions[next_state][symbol].add(state)
+        max_state = max(self.table.keys())
+        aux_state_id = max_state + 1
+        for state, transitions in self.table.items():
+            for key in self.terms:
+                if key not in transitions:
+                    reverse_transitions[aux_state_id][key].add(state)
+        for key in self.terms:
+            reverse_transitions[aux_state_id][key].add(aux_state_id)
         return reverse_transitions
 
     def _is_terminal(self, state):
         return state in self.accepts
 
     def _reachable(self):
-        reachable = [False] * len(self.table)
+        reachable = [False] * (len(self.table) + 1)
         queue = deque([self.initial_state])
         reachable[self.initial_state] = True
         while queue:
@@ -75,7 +92,7 @@ class DFA:
 
         while queue:
             u, v = queue.popleft()
-            for symbol in ALPHABET:
+            for symbol in self.terms:
                 for r in reverse_transitions[u][symbol]:
                     for s in reverse_transitions[v][symbol]:
                         if not marked[r][s]:
@@ -85,8 +102,8 @@ class DFA:
         return marked
 
     def build_min_dfa(self) -> Self:
-        n = len(self.table)
-        states = list(self.table.keys())
+        n = len(self.table) + 1
+        states = list(self.table.keys()) + [max(self.table.keys()) + 1]
         is_terminal = [self._is_terminal(state) for state in states]
         reverse_transitions = self._build_reverse_transitions()
         reachable = self._reachable()

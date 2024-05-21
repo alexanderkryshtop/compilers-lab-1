@@ -275,14 +275,14 @@ class TestDFAMinimization:
         assert min_dfa.accepts == {3}
         assert min_dfa.initial_state == 0
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_concat(self):
         nfa = concat(char("a"), char("b"))
         dfa = DFA.from_nfa(nfa)
         min_dfa = dfa.build_min_dfa()
 
-        assert min_dfa.table == {0: {'a': 0, 'b': 1}}
-        assert min_dfa.accepts == {1}
+        assert min_dfa.table == {0: {'a': 1}, 1: {'b': 2}, 2: {}}
+        assert min_dfa.accepts == {2}
         assert min_dfa.initial_state == 0
 
         assert not min_dfa.test("a")
